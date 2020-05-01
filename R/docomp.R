@@ -8,6 +8,7 @@
 #' @param factors List of factors.
 #' @param add Additional columns to keep.
 #' @param dfr The name of the data frame.
+#' @param method Use \code{fast} or \code{slow} method. 
 #' @details This function do a specific computation for all the \code{traits}
 #' for each level's combination of the \code{factors}. Additional columns can be
 #' kept if specified in \code{add}. All \code{factors} and \code{add} values
@@ -25,8 +26,12 @@
 #' docomp("max", traits, factors, dfr = spg)
 #' @export
 
-docomp <- function(do, traits, factors, add = NULL, dfr) {
+docomp <- function(do, traits, factors, add = NULL, dfr, method = c("fast", "slow")) {
 
+  # Match arguments
+  
+  method <- match.arg(method)
+  
   # Create data.frame
   
   dfr.out <- data.frame(dfr[, c(factors, add)])
@@ -51,16 +56,49 @@ docomp <- function(do, traits, factors, add = NULL, dfr) {
   
   # Do computations
   
-  for (i in 1:nt) {
-    for (j in 1:dim(dfr.out)[1]){
-      if (do == "count")
-        dfr.out[j, traits[i]] <- sum(!is.na(dfr[idin == idout[j], traits[i]]))
-      else
-        if (sum(!is.na(dfr[idin == idout[j], traits[i]])) == 0)
-          dfr.out[j, traits[i]] <- NA
-        else 
-          dfr.out[j, traits[i]] <- eval(parse(text = do))(dfr[idin == idout[j], traits[i]], na.rm = TRUE)
+  if (method == "slow") {
+
+    for (i in 1:nt) {
+      for (j in 1:dim(dfr.out)[1]){
+        if (do == "count")
+          dfr.out[j, traits[i]] <- sum(!is.na(dfr[idin == idout[j], traits[i]]))
+        else
+          if (sum(!is.na(dfr[idin == idout[j], traits[i]])) == 0)
+            dfr.out[j, traits[i]] <- NA
+          else 
+            dfr.out[j, traits[i]] <- eval(parse(text = do))(dfr[idin == idout[j], traits[i]], na.rm = TRUE)
+      }
     }
+    
+    row.names(dfr.out) <- 1:dim(dfr.out)[1]
+    
+  }
+
+  if (method == "fast") {
+    
+    if (do == "count")
+      foo <- function(x) sum(!is.na(x))
+    else
+      foo <- function(x) {
+        if (sum(!is.na(x)) == 0)
+          NA
+        else
+          eval(parse(text = do))(x, na.rm = TRUE)
+      }
+    
+    dfr.out[, "id.to.merge"] <- idout
+        
+    for (i in 1:nt) {
+        
+      dfr.trait <- data.frame(tapply(dfr[, traits[i]], idin, foo))
+      dfr.trait[, 'id.to.merge'] <- rownames(dfr.trait)
+      colnames(dfr.trait)[1] <- traits[i]
+      dfr.out <- merge(dfr.out, dfr.trait, sort = FALSE)
+    
+    }
+
+    dfr.out <- dfr.out[, colnames(dfr.out) != 'id.to.merge']
+        
   }
   
   # return data.frame
