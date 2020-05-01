@@ -18,7 +18,7 @@ install.packages("devtools")
 Then type:
 
 ```{r eval=F}
-devtools::install_github("reyzaguirre/st4gi")
+devtools::install_github("AGROFIMS/st4gi")
 ```
 
 Usage
