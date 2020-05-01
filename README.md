@@ -5,7 +5,7 @@
 st4gi
 =====
 
-Statistical tools for genetic improvement.
+Statistical tools for agronomic trials and genetic improvement.
 
 Installation
 ------------
