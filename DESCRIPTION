@@ -8,7 +8,7 @@ Maintainer: Raul Eyzaguirre <R.EYZAGUIRRE@CGIAR.ORG>
 Description: Statistical tools for the analysis of experimental data for crop
     genetic improvement.
 Depends:
-    R (>= 3.5.0)
+    R (>= 3.4.4)
 Imports:
     lme4,
     shiny,
