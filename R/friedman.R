@@ -6,7 +6,8 @@
 #' @param block The blocks.
 #' @param dfr The name of the data frame.
 #' @param alpha Significant level for comparisons.
-#' @param print.text Logical, if \code{TRUE}, it prints output text to console.
+#' @param print.mc Logical, if \code{TRUE}, it prints multiple comparisons groups.
+#' @param print.pc Logical, if \code{TRUE}, it prints pairwise comparisons tests.
 #' @details It tests the null hypothesis that the treatments have identical effects.
 #' @return It returns the Friedman test and a the multiple comparisons.
 #' @author Raul Eyzaguirre.
@@ -24,13 +25,19 @@
 #' @importFrom stats pchisq
 #' @export
 
-friedman.t <- function(trait, treat, block, dfr, alpha = 0.05, print.text = TRUE) {
+friedman.t <- function(trait, treat, block, dfr, alpha = 0.05,
+                       print.mc = TRUE, print.pc = TRUE) {
   
   # Create a data matrix
   # compute means if more of one evaluation
   
   dmx <- by(dfr[, trait], dfr[, c(block, treat)], mean, na.rm = TRUE)
   dmx <- as.data.frame(dmx[, ])
+  
+  # Check NA's
+  
+  if (sum(is.na(dmx)) > 0)
+    stop("There are NA values")
   
   # Number of treatments and blocks
   
@@ -72,7 +79,7 @@ friedman.t <- function(trait, treat, block, dfr, alpha = 0.05, print.text = TRUE
  
   # Create groups of non-significant differences
   
-  groups <- data.frame(sort(R), '')
+  groups <- data.frame(sort(R, decreasing = TRUE), '')
   groups[, 2] <- as.character(groups[, 2])
   
   i <- 1
@@ -138,19 +145,29 @@ friedman.t <- function(trait, treat, block, dfr, alpha = 0.05, print.text = TRUE
   
   # Output
   
-  if (print.text == TRUE) {
-    cat("\n     Friedman rank sum test\n\n")
-    cat('Chi-square statistic = ', T1, ', df = ', dfn,
-        ', p-value = ', p.T1, '\n', sep = '')
-    cat('F statistic = ', T2, ', num.df = ', dfn, ', den.df = ', dfd,
-        ', p-value = ', p.T2, '\n', sep = '')
+  cat("\n     Friedman rank sum test\n\n")
+  cat('Chi-square statistic = ', T1, ', df = ', dfn,
+      ', p-value = ', p.T1, '\n', sep = '')
+  cat('F statistic = ', T2, ', num.df = ', dfn, ', den.df = ', dfd,
+      ', p-value = ', p.T2, '\n', sep = '')
+  if (print.mc == TRUE & print.pc == TRUE) {
     cat("\n     Multiple comparisons\n\n")
     cat('alpha = ', alpha, ' LSD = ', lsd, '\n\n')
     print(groups)
     cat('\n')
     print(compar)
   }
-
+  if (print.mc == TRUE & print.pc == FALSE) {
+    cat("\n     Multiple comparisons\n\n")
+    cat('alpha = ', alpha, ' LSD = ', lsd, '\n\n')
+    print(groups)
+  }
+  if (print.mc == FALSE & print.pc == TRUE) {
+    cat("\n     Multiple comparisons\n\n")
+    cat('alpha = ', alpha, ' LSD = ', lsd, '\n\n')
+    print(compar)
+  }
+  
   output <- list(T1 = T1, p.T1 = p.T1, T2 = T2, p.T2 = p.T2, dfn = dfn, dfd = dfd,
                  lsd = lsd, groups = groups, compar = compar)
   

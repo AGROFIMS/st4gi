@@ -1,4 +1,4 @@
-#' Set values to \code{NA}.
+#' Set values to \code{NA} for sweetpotato data.
 #'
 #' Detect impossible values for sweetpotato data and set them to missing value
 #' (\code{NA}) according to some rules.
@@ -7,7 +7,7 @@
 #' @param f Factor for extreme values detection. See details.
 #' 
 #' @details The data frame must use the labels (lower or upper case) listed in
-#' function \code{check.names.sp}; see \code{?check.names.sp} for details.
+#' function \code{check.names.sp}.
 #' Consider the following groups of traits:
 #' \itemize{
 #'  \item \code{pre} (traits evaluated pre-harvest): \code{vir}, \code{vir1},
@@ -60,8 +60,8 @@
 #'  \item Extreme low and high values are detected using the interquartile range.
 #'  The rule is to detect any value out of the interval
 #'  \eqn{[Q_1 - f \times (m/3 + IQR); Q_3 + f \times (m/3 + IQR)]} where \code{m}
-#'  is the mean. By default \code{f = 10} and cannot be less than 10. Values out
-#'  of this range are set to \code{NA}.
+#'  is the mean. By default \code{f = 10} and if less than 10 a warning is shown.
+#'  Values out of this range are set to \code{NA}.
 #'  \item If \code{nope == 0} and there is some data for any trait,
 #'  then \code{nope} is set to \code{NA}.  
 #'  \item If \code{noph == 0} and there is some data for any non-pre-harvest trait,
@@ -86,11 +86,11 @@
 #'                   tnr = c(1.3, 10, 11, NA, 2, 5),
 #'                   scol = c(1, 0, 15, 5, 4, 7),
 #'                   fcol.cc = c(1, 15, 12, 24, 55, 20))
-#' setna(dfr)
+#' setna.sp(dfr)
 #' @importFrom stats IQR quantile
 #' @export
 
-setna <- function(dfr, f = 10) {
+setna.sp <- function(dfr, f = 10) {
   
   #############################################################################
   # Preliminary settings
@@ -99,7 +99,7 @@ setna <- function(dfr, f = 10) {
   # Check f
   
   if (f < 10)
-    f <- 10
+    warning("f < 10 can lead to delete true values", call. = FALSE)
   
   # Check names
   
@@ -252,10 +252,11 @@ setna <- function(dfr, f = 10) {
   # Extreme values (almost impossible)
   
   t.all <- c(cnn, cpo, pnn, ppo, dnn, bc, tc)
+  t.all <- t.all[!(t.all %in% c("nops", "nope", "noph", "nopr"))]
   
   for (i in 1:length(t.all))
     if (exists(t.all[i], dfr)) {
-      m <- mean(dfr[, t.all[i]], na.rm = TRUE)
+      m <- mean(dfr[dfr[, t.all[i]] != 0, t.all[i]], na.rm = TRUE)
       q1 <- quantile(dfr[, t.all[i]], 0.25, na.rm = TRUE)
       q3 <- quantile(dfr[, t.all[i]], 0.75, na.rm = TRUE)
       tol <- (m / 3 + IQR(dfr[, t.all[i]], na.rm = TRUE))
@@ -329,7 +330,7 @@ setna <- function(dfr, f = 10) {
         dfr[, 'nopr'] == 0 & !is.na(dfr[, 'nopr'])
     dfr[cond, 'nopr'] <- NA
     if (sum(cond) > 0)
-      warning("Rows data for roots replaced with NA for trait nopr: ",
+      warning("Rows with data replaced with NA for trait nopr: ",
               paste0(rownames(dfr)[cond], " "), call. = FALSE)
   }
   
